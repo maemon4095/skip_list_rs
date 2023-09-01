@@ -1,0 +1,4 @@
+[workspace]
+members = ["*"]
+exclude = [".git", ".vscode", "target"]
+resolver = "2"
