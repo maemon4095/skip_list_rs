@@ -78,7 +78,6 @@ impl<K: Ord, V> Node<K, V> {
         Self::offset_of_level() + std::mem::size_of::<usize>()
     }
 
-    // Layout, key offset, value offset, level offset, nexts offset
     fn calc_layout_and_offset(level: usize) -> (std::alloc::Layout, usize, usize, usize, usize) {
         let key_layout = std::alloc::Layout::new::<K>();
         let value_layout = std::alloc::Layout::new::<V>();
