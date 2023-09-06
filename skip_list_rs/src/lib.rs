@@ -40,7 +40,7 @@ impl<K: Ord, V, G: Generator<bool>> SkipList<K, V, G> {
 
     // levelごとに再帰を行う．
     // 各levelで前方に進められるだけ進め，進められなくなればlevelを下げて再帰．
-    // 巻き上げにおいて，forwardsの該当levelを挿入された要素にする．ただし，挿入されたnodeのlevelまで．
+    // 巻き上げにおいて，forwardsの該当levelを挿入された要素にする．ただし，挿入されたnodeのlevelを超えた場合は何もしない．
     fn insert_impl(
         &mut self,
         mut forwards: &mut [MaybeNode<K, V>],
@@ -247,7 +247,7 @@ mod test {
     static ALLOCATOR: Mockalloc<System> = Mockalloc(System);
 
     #[mockalloc::test]
-    fn visual() {
+    fn test() {
         use rand::seq::SliceRandom;
         let mut rng = SmallRng::from_entropy();
         let gen = Gen::standard(SmallRng::from_entropy());
@@ -299,7 +299,7 @@ mod test {
         }
     }
 
-    #[test]
+    #[mockalloc::test]
     fn iter() {
         use rand::seq::SliceRandom;
         let mut rng = SmallRng::from_entropy();
