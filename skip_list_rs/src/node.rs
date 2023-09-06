@@ -34,21 +34,6 @@ impl<K: Ord, V> MaybeNode<K, V> {
             marker: PhantomData,
         })
     }
-
-    pub fn take_ref(&self) -> Option<&Node<K, V>> {
-        if self.ptr.is_null() {
-            return None;
-        }
-
-        unsafe { Some(std::mem::transmute(self)) }
-    }
-    pub fn take_mut(&mut self) -> Option<&mut Node<K, V>> {
-        if self.ptr.is_null() {
-            return None;
-        }
-
-        unsafe { Some(std::mem::transmute(self)) }
-    }
 }
 // key: K + value: V + level: usize + nexts: [MaybeNode<K, V>]
 pub struct Node<K: Ord, V> {
@@ -111,29 +96,29 @@ impl<K: Ord, V> Node<K, V> {
         }
     }
 
-    pub fn value_ptr(&self) -> *mut V {
+    pub fn value_ptr(self) -> *mut V {
         unsafe { self.ptr.as_ptr().add(Self::offset_of_value()).cast::<V>() }
     }
 
-    pub fn value(&self) -> &V {
+    pub fn value<'a>(self) -> &'a V {
         unsafe { self.value_ptr().as_ref().unwrap() }
     }
-    pub fn value_mut(&mut self) -> &mut V {
+    pub fn value_mut<'a>(self) -> &'a mut V {
         unsafe { self.value_ptr().as_mut().unwrap() }
     }
 
-    pub fn key_ptr(&self) -> *mut K {
+    pub fn key_ptr(self) -> *mut K {
         self.ptr.as_ptr().cast::<K>()
     }
 
-    pub fn key(&self) -> &K {
+    pub fn key<'a>(self) -> &'a K {
         unsafe { self.key_ptr().as_ref().unwrap() }
     }
-    pub fn key_mut(&mut self) -> &mut K {
+    pub fn key_mut<'a>(self) -> &'a mut K {
         unsafe { self.key_ptr().as_mut().unwrap() }
     }
 
-    pub fn level(&self) -> usize {
+    pub fn level(self) -> usize {
         unsafe {
             self.ptr
                 .as_ptr()
@@ -143,7 +128,7 @@ impl<K: Ord, V> Node<K, V> {
         }
     }
 
-    pub fn nexts(&self) -> &[MaybeNode<K, V>] {
+    pub fn nexts<'a>(self) -> &'a [MaybeNode<K, V>] {
         unsafe {
             let ptr = self.ptr.as_ptr().add(Self::offset_of_nexts()).cast();
             let len = self.level();
@@ -151,7 +136,7 @@ impl<K: Ord, V> Node<K, V> {
         }
     }
 
-    pub fn nexts_mut(&mut self) -> &mut [MaybeNode<K, V>] {
+    pub fn nexts_mut<'a>(self) -> &'a mut [MaybeNode<K, V>] {
         unsafe {
             let ptr = self.ptr.as_ptr().add(Self::offset_of_nexts()).cast();
             let len = self.level();
@@ -159,7 +144,7 @@ impl<K: Ord, V> Node<K, V> {
         }
     }
 
-    pub fn dispose(mut self) -> (K, V) {
+    pub fn dispose(self) -> (K, V) {
         let ptr: *mut K = self.key_mut();
         let key = unsafe { ptr.read() };
         let ptr: *mut V = self.value_mut();

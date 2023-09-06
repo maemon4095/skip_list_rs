@@ -48,31 +48,26 @@ impl<K: Ord, V, G: Generator<bool>> SkipList<K, V, G> {
         key: K,
         value: V,
     ) -> Result<Node<K, V>, (K, V)> {
-        unsafe {
-            loop {
-                //前方に進める．
-                let ptr = forwards.as_mut_ptr();
-                let len = forwards.len();
+        loop {
+            //前方に進める．
+            assert!(level < forwards.len());
 
-                assert!(level < len);
+            let Some(next) = forwards[level].take() else {
+                break;
+            };
 
-                let Some(next) = ptr.add(level).as_mut().unwrap().take_mut() else {
-                    break;
-                };
-
-                if next.key() == &key {
-                    return Err((key, value));
-                }
-
-                if next.key() > &key {
-                    break;
-                }
-
-                forwards = next.nexts_mut();
+            if next.key() == &key {
+                return Err((key, value));
             }
+
+            if next.key() > &key {
+                break;
+            }
+
+            forwards = next.nexts_mut();
         }
 
-        let mut node = if level == 0 {
+        let node = if level == 0 {
             let n = self.alloc(key, value);
             self.count += 1;
             n
@@ -95,7 +90,7 @@ impl<K: Ord, V, G: Generator<bool>> SkipList<K, V, G> {
 
         for level in (0..forwards.len()).rev() {
             loop {
-                let Some(next) = forwards.get(level).and_then(|e| e.take_ref()) else {
+                let Some(next) = forwards.get(level).and_then(|e| e.take()) else {
                     break;
                 };
                 if next.key() >= key {
@@ -105,7 +100,7 @@ impl<K: Ord, V, G: Generator<bool>> SkipList<K, V, G> {
             }
         }
 
-        let Some(node) = forwards.get(0).and_then(|e| e.take_ref()) else {
+        let Some(node) = forwards.get(0).and_then(|e| e.take()) else {
             return None;
         };
 
@@ -130,27 +125,22 @@ impl<K: Ord, V, G: Generator<bool>> SkipList<K, V, G> {
         level: usize,
         key: &K,
     ) -> Result<Node<K, V>, ()> {
-        unsafe {
-            loop {
-                //前方に進める．
-                let ptr = forwards.as_mut_ptr();
-                let len = forwards.len();
+        loop {
+            //前方に進める．
+            assert!(level < forwards.len());
 
-                assert!(level < len);
+            let Some(next) = forwards[level].take() else {
+                break;
+            };
 
-                let Some(next) = ptr.add(level).as_mut().unwrap().take_mut() else {
-                    break;
-                };
-
-                if next.key() >= &key {
-                    break;
-                }
-
-                forwards = next.nexts_mut();
+            if next.key() >= &key {
+                break;
             }
+
+            forwards = next.nexts_mut();
         }
 
-        let mut removed = if level == 0 {
+        let removed = if level == 0 {
             let Some(node) = forwards[level].take() else {
                 return Err(());
             };
@@ -323,7 +313,7 @@ mod test {
         let mut forwards = list.nodes.as_slice();
         let mut lines: Vec<_> = repeat_with(String::new).take(forwards.len()).collect();
         let mut baseline = String::new();
-        let mut current_node: Option<&Node<K, V>> = None;
+        let mut current_node: Option<Node<K, V>> = None;
         let align = 10;
         loop {
             match current_node {
@@ -335,7 +325,7 @@ mod test {
                 write!(
                     lines[no],
                     "{:<align$}",
-                    format!("{:?}", node.take_ref().map(|e| e.key()))
+                    format!("{:?}", node.take().map(|e| e.key()))
                 )
                 .unwrap();
             }
@@ -344,7 +334,7 @@ mod test {
                 lines[ln].extend(repeat(' ').take(align));
             }
 
-            let Some(next) = forwards[0].take_ref() else {
+            let Some(next) = forwards[0].take() else {
                 break;
             };
             current_node = Some(next);
